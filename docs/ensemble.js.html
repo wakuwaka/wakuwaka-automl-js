@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ensemble.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ensemble.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const base = require('./base')
+const RegressorMixin = base.RegressorMixin
+const BaseEstimator = base.BaseEstimator
+const utils = require('./utils')
+const tf = require('@tensorflow/tfjs')
+const prep = require('./preprocessing')
+const tree = require('./tree')
+
+/**
+ * Gradient boosting model, for regression problems.
+ * As a weak learner, decision tree is used. Inspired by:
+ * https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
+ */
+class GradientBoostingRegressor extends RegressorMixin(BaseEstimator){
+    /**
+     * Instantiates GradientBoostingRegressor.
+     * @param {Object} params Dictionary with parameters for
+     * the model.
+     * @param {String} [params.loss] Type of loss to use. Currently
+     * available is 'squared_loss'.
+     * @param {Number} [param.learning_rate] How much does a single
+     * weak
