@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: linear_model.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: linear_model.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const base = require('./base')
+const RegressorMixin = base.RegressorMixin
+const BaseEstimator = base.BaseEstimator
+const utils = require('./utils')
+const tf = require('@tensorflow/tfjs')
+const prep = require('./preprocessing')
+
+/*
+class SGDRegressor extends RegressorMixin(BaseEstimator){
+    
+    constructor(params){
+        super(params, {
+            'alpha': 0.0001,
+            'l1_ratio': 0.15,
+            'max_iter': 1000,
+            'eta0': 0.01,
+            'batch_size': 1
+        })
+    }
+
+    async fit(X, y){
+        var [X, y] = utils.check_2dXy(X, y)
+
+        var l1_ratio = this.params['l1_ratio']
+        var alpha = this.params['alpha']
+        var learning_rate = this.params['eta0']
+        var epochs = this.params['max_iter']
+        var batch_size = this.params['batch_size']
+
+        var sample_shape = X.shape.slice(1)
+        
+        var l1_alpha = l1_ratio*alpha
+        var l2_alpha = (1.0 - l1_ratio)*alpha
+        var regularization = tf.regularizers.l1l2({
+            'l1': l1_alpha,
+            'l2': l2_alpha
+        })
+
+        var model = tf.sequential()
+        model.add(tf.layers.dense({
+            units: 1, 
+            inputShape: sample_shape, 
+            biasRegularizer: regularization, 
+            kernelRegularizer: regularization
+        }))
+        
+        await model.compile({
+            loss: "meanSquaredError", 
+            optimizer: tf.train.sgd(learning_rate)
+        });
+
+        await model.fit(X, y, {'epochs': epochs, 'batchSize': batch_size})
+        var dense = model.layers[0]
+        var coef_ = await dense.kernel.val.data()
+        var intercept_ = await dense.bias.val.data()
+
+        this.state['coef_'] = coef_
+        this.state['intercept_'] = intercept_
+        this.state['model'] = model
+    }
+
+    async predict(X){
+        utils.check_is_fitted(this, ['model'])
+        var X = utils.check_2dX(X)
+
+        var model = this.state['model']
+        var y_pred = await model.predict(X)
+
+        // drop an extra dimension
+        y_pred = tf.reshape(y_pred, [-1])
+        return y_pred
+    }
+}
+
+module.exports.SGDRegressor = SGDRegressor*/
+
+class SGDRegressor extends RegressorMixin(BaseEstimator){
+    /**
+     * Learns linear regressor model using Stochastic Gradient Descent
+     * to fit the model to the data.
+     * @param {Object} params Parameters of the estimator.
+     * @param {Number} [params.alpha] Multiplier of the regularization
+     * term in the objective of SGD.
+     * @param {Number} [params.l1_ratio] Fraction of L1 regularization
+     * in sum of L1 and L2 regularizations.
+     * @param {Number} [params.max_iter] Maximum number of iterations
+     * for which to train the model.
+     * @param {Number} [params.eta0] Learning rate for the algorithm.
+     * @param {String} [params.penalty] Type of penalty to use. Supported
+     * - 'elasticnet': both L1 and L2 penalty are used; Ratio between the
+     * two losses is specified using `l1_ratio` parameter.
+     * @param {String} [params.loss] Loss to use during training. Supported
+     * losses are:
+     * - 'squared_loss': squared error, l(y, f) = 1/n \sum_{i = 1..n}(y_i - f_i)^2
+     * This loss is often used for regression problems.
+     * - 'hinge': Hinge loss, l(y, f) = 1/n \sum_{i = 1..n} max(0, 1 - y_i * f_i)
+     * This loss assumes that y_i \in {-1, 1}. Most of the time this loss is used
+     * for classification problems.
+     */
+    constructor(params){
+        super(params, {
+            'alpha': 0.0001,
+            'l1_ratio': 0.15,
+            'max_iter': 250,
+            'eta0': 0.1,
+            'penalty': 'elasticnet',
+            'loss': 'squared_loss'
+        })
+    }
+
+    epoch(X, y, n_epoch){
+        var N = y.length
+        var M = X[0].length
+        var l1_alpha = this.params['alpha'] * this.params['l1_ratio']
+        var l2_alpha = this.params['alpha'] * (1.0 - this.params['l1_ratio'])
+        var beta1p = this.state['beta1p']
+        var beta2p = this.state['beta2p']
+        var w = this.state['coef_']
+        var b = this.state['intercept_']
+        var m0 = this.state['m0']
+        var v0 = this.state['v0']
+        var f = this.state['f']
+        var t = this.state['t']
+
+        var loss_idx = {'squared_loss':0, 'hinge':1}[this.params['loss']]
+        
+        var beta1 = 0.9
+        var beta2 = 0.999
+        var lr = this.params['eta0'] / Math.pow(n_epoch, 0.5)
+
+        var f_x = 0.0
+        var dw_j = 0.0
+        var w_j = 0.0
+        var x = null
+        var x_j = 0.0
+        var error = 0
+        var m_th=0.0
+        var v_th = 0.0
+
+        var aux0 = 0.0
+        va
