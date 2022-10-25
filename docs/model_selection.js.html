@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: model_selection.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: model_selection.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const utils = require('./utils')
+const base = require('./base')
+const prep = require('./preprocessing')
+const io = require('./io')
+const opt = require('optimization-js')
+
+/**
+ * Splits the data into training and testing partitions for model 
+ * fitting. The split is done at random.
+ * @param {Array} arrays List of arrays to be split into training
+ * and testing parts.
+ * @param {Number} test_split Value in the range of [0; 1]. Specifies
+ * how much of the data will be used for test partition.
+ */
+function train_test_split(arrays, test_split=0.25){
+    var N = arrays[0].length
+    var partition = utils.random_partitioning(N, [1.0 - test_split, test_split])
+    function train_test_split(arrays, test_split=0.25){
+        var N = arrays[0].length
+        var partition = utils.random_partitioning(N, [1.0 - test_split, test_split])
+    
+        var result = []
+    
+        // for arrays = [X, y], the function should return
+        // [X_train, X_test, y_train, y_test]
+        for(var arr of arrays){
+            for(var I of partition){
+                var part = I.map((ix)=>arr[ix])
+                result.push(part)
+            }
+        }
+    
+        return result
+    }
+    
+    module.exports.train_test_split = train_test_split
+    
+    var result = []
+
+    // for arrays = [X, y], the function should return
+    // [X_train, X_test, y_train, y_test]
+    for(var arr of arrays){
+        for(var I of partition){
+            var part = I.map((ix)=>arr[ix])
+            result.push(part)
+        }
+    }
+
+    return result
+}
+
+module.exports.train_test_split = train_test_split
+
+/**
+ * Evaluate estimator performance via cross - validation.
+ * Interface similar to `cross_val_score` function of sklearn.
+ * @param {BaseEstimator} estimator Model to be scored.
+ * @param {Array} X Input values to be used for sorting.
+ * @param {Array} y Output values to be used for scoring
+ * @param {Object} groups Ignored.
+ * @param {Object} scoring Ignored for the time being.
+ * @param {Number} cv Number of folds used for cross - validation.
+ * @returns {Array} Scores on various partitions.
+ */
+async function cross_val_score(estimator, X, y=null, groups=null, scoring=null, cv=3){
+    var length = []
+
+    for(var i=0; i&l
